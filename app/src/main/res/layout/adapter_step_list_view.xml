@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+xmlns:autofit="http://schemas.android.com/apk/res-auto"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+tools:context="com.nexhealth.android.adapters.AdapterStepsListView">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:textColor="#FC6F27"
+            android:textStyle="bold"
+            android:text="Date"
+            android:background="@android:color/transparent"
+            android:id="@+id/button_step_created_at"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/text_steps"
+            android:textStyle="normal"
+            android:text="Steps"
+            android:layout_gravity="left"
+            android:gravity="left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+<Space
+    android:layout_width="@dimen/activity_vertical_margin"
+    android:layout_height="@dimen/abc_control_inset_material" />
+        <TextView
+            android:id="@+id/text_miles"
+            android:textStyle="normal"
+            android:text="Miles"
+            android:layout_gravity="right"
+            android:gravity="right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
+
+</FrameLayout>
