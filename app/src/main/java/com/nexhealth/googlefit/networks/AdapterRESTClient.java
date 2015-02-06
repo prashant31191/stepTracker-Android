@@ -31,11 +31,11 @@ public class AdapterRESTClient {
         getClient().get(url, params, responseHandler);
     }
 
-    public static void post(String url, StringEntity stringEntity, AsyncHttpResponseHandler responseHandler) {
+/*    public static void post(String url, StringEntity stringEntity, AsyncHttpResponseHandler responseHandler) {
         getClient().setTimeout(DEFAULT_TIMEOUT);
         getClient().setMaxRetriesAndTimeout(1, DEFAULT_TIMEOUT);
         getClient().post(null, getAbsoluteUrl(url), stringEntity, "application/json", responseHandler);
-    }
+    }*/
 
     public static void post(String url,final  RequestParams requestParams, AsyncHttpResponseHandler responseHandler) {
         getClient().setTimeout(DEFAULT_TIMEOUT);

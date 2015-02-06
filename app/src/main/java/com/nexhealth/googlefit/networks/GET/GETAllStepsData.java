@@ -23,6 +23,8 @@ import com.nexhealth.googlefit.interfaces.InterfaceGetAllSteps;
 
 import org.apache.http.Header;
 
+import java.util.Arrays;
+
 /**
  * Created by waleed on 2/2/15.
  */
@@ -45,14 +47,15 @@ public class GETAllStepsData implements InterfaceGetAllSteps{
         databaseHelper = new DatabaseHelper(context);
         database = databaseHelper.getWritableDatabase();
         showProgressDialog();
+        Log.i("HI","Hi");
         shouldRequestAllSteps(ConstantKey.REMEMBER_TOKEN);
     }
 
     private void shouldRequestAllSteps(String rememberToken) {
         RequestParams params  = new RequestParams();
-        params.add("auth[remember_token]",      rememberToken);
-        params.put("auth[days_of_data]", 60);
-
+        params.add("auth[remember_token]", rememberToken);
+        params.put("time", 60);
+        Log.i("contacting server", "contact?");
         shouldContactServer(params);
     }
 
@@ -60,28 +63,26 @@ public class GETAllStepsData implements InterfaceGetAllSteps{
         AdapterRESTClient.post("/step_trackers/view", params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int i, Header[] headers, byte[] bytes) {
-
                 Gson gson = new Gson();
                 ModelResponseCodeStatus codeStatus = new ModelResponseCodeStatus();
                 codeStatus = gson.fromJson(new String(bytes), ModelResponseCodeStatus.class);
                 if (codeStatus.code) {
-
                     modelGetStepsData = gson.fromJson(new String(bytes), ModelGetStepsData.class);
                     databaseHelper.onUpgrade(database, 1, 1);
                     if (modelGetStepsData != null) {
+                        Log.i("success?", "success");
                         shouldDeserialized(modelGetStepsData);
-
                     }
 
                 } else {
+                    Log.i("fail", String.valueOf(i));
                     interfaceGetAllSteps.getAllStepsFailed();
                 }
-
             }
 
             @Override
             public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
-
+                Log.i("fail", String.valueOf(throwable));
                 dismissProgressDialog();
                 interfaceGetAllSteps.getAllStepsFailed();
 
@@ -91,17 +92,20 @@ public class GETAllStepsData implements InterfaceGetAllSteps{
 
     private void shouldDeserialized(ModelGetStepsData modelGetStepsData) {
 
-        Log.e("steps", String.valueOf(modelGetStepsData.data.steps));
+        Log.e("steps", String.valueOf(modelGetStepsData.data.totalSteps));
+        dismissProgressDialog();
 
     }
 
     @Override
     public void getAllStepsFailed(){
+        dismissProgressDialog();
 
     }
 
     @Override
     public void getAllStepsSucceed(){
+        dismissProgressDialog();
 
     }
 

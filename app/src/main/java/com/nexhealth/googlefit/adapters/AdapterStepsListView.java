@@ -85,43 +85,6 @@ public class AdapterStepsListView extends BaseAdapter {
         viewHolderHub.created_at.setText(str);
         viewHolderHub.created_at.setPaintFlags(viewHolderHub.created_at.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
 
-        /*viewHolderHub.created_at.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.e(TAG, mealLists.get(position).typeMal);
-                switch (mealLists.get(position).typeMal.toUpperCase()){
-                    case "BREAKFAST":
-                        Log.i(TAG, "breakfast");
-                        context.startActivity(new Intent(context.getApplicationContext(), BreakfastMainActivity.class));
-                        break;
-                    case "LUNCH":
-                        Log.i(TAG, "lunch");
-                        context.startActivity(new Intent(context.getApplicationContext(), LunchActivity.class));
-                        break;
-                    case "DINNER":
-                        Log.i(TAG, "dinner");
-                        context.startActivity(new Intent(context.getApplicationContext(), DinnerActivity.class));
-                        break;
-                    case "SNACK":
-
-                        Log.i(TAG, "snack");
-                        context.startActivity(new Intent(context.getApplicationContext(), SnackActivity.class));
-                        break;
-                    case "DRINK":
-                        context.startActivity(new Intent(context.getApplicationContext(), DrinkActivity.class));
-                        break;
-                    case "DRINKS":
-                        context.startActivity(new Intent(context.getApplicationContext(), DrinkActivity.class));
-                        break;
-                    default:
-                        Log.i(TAG, "Shit");
-                        break;
-
-                }
-            }
-        });*/
-
-
         return convertView;
     }
 
