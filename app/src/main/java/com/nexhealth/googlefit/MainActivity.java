@@ -352,12 +352,6 @@ public class MainActivity extends ActionBarActivity implements
                 @Override
                 public void onResult(DataReadResult dataReadResult) {
 
-//                    DataSource myDataSource = new DataSource.Builder()
-//                            .setDataType(DataType.TYPE_STEP_COUNT_CUMULATIVE)
-//                            .setObfuscated(true)
-//                            .setType(1)//raw
-//                            .build();
-
                     printData(dataReadResult);
                     DataSet stepData = dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_CUMULATIVE);
 
@@ -395,7 +389,7 @@ public class MainActivity extends ActionBarActivity implements
         Date now = new Date();
         cal.setTime(now);
         long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.DAY_OF_YEAR, -2);
+        cal.add(Calendar.DAY_OF_YEAR, -1);
         long startTime = cal.getTimeInMillis();
         Log.i("START TIME", new SimpleDateFormat("yyyy.MM.dd").format(startTime));
 
@@ -403,25 +397,18 @@ public class MainActivity extends ActionBarActivity implements
         Log.i(TAG, "Range Start: " + dateFormat.format(startTime));
         Log.i(TAG, "Range End: " + dateFormat.format(endTime));
 
-        DataSource myDataSource = new DataSource.Builder()
-                .setDataType(DataType.TYPE_STEP_COUNT_CUMULATIVE)
-                .setObfuscated(false)
-                .setType(1)//raw
-                .build();
-
         final DataReadRequest readRequest = new DataReadRequest.Builder()
 //                // The data request can specify multiple data types to return, effectively
 //                // combining multiple data queries into one call.
 //                // In this example, it's very unlikely that the request is for several hundred
 //                // datapoints each consisting of a few steps and a timestamp.  The more likely
 //                // scenario is wanting to see how many steps were walked per day, for 7 days.
-//                .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
 //                        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
 //                        // bucketByTime allows for a time span, whereas bucketBySession would allow
 //                        // bucketing by "sessions", which would need to be defined in code.
-//                .bucketByTime(1, TimeUnit.HOURS)
-
-                .read(myDataSource)
+                .bucketByTime(1, TimeUnit.HOURS)
+                .read(DataType.TYPE_STEP_COUNT_CUMULATIVE)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
         // [END build_read_data_request]
