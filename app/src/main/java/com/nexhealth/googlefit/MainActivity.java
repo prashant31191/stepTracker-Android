@@ -15,6 +15,7 @@ import com.google.android.gms.fitness.request.DataDeleteRequest;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
+import com.google.android.gms.wearable.DataApi;
 import com.nexhealth.googlefit.database.DatabaseHelper;
 import android.os.Bundle;
 import android.util.Log;
@@ -166,12 +167,29 @@ public class MainActivity extends ActionBarActivity implements
         }
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i(TAG, "Connecting...");
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+    }
+
     private void setupGoogleFit(){
         // Create a Google Fit Client instance with default user account.
         mGoogleApiClient = new GoogleApiClient.Builder(this)
             .addApi(Fitness.API)
             .useDefaultAccount()
-            .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ))
+            .addScope(new Scope(Scopes.FITNESS_LOCATION_READ_WRITE))
+            .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
+            .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
             .addConnectionCallbacks(this)
             .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
                 // Called whenever the API client fails to connect.
@@ -202,7 +220,7 @@ public class MainActivity extends ActionBarActivity implements
             })
             .build();
 
-        mGoogleApiClient.connect();
+//        mGoogleApiClient.connect();
 
     }
 
@@ -228,13 +246,13 @@ public class MainActivity extends ActionBarActivity implements
     }
 
     private void cancelSubscription() {
-        final String dataTypeStr = DataType.TYPE_ACTIVITY_SAMPLE.toString();
+        final String dataTypeStr = DataType.TYPE_STEP_COUNT_CUMULATIVE.toString();
         Log.i(TAG, "Unsubscribing from data type: " + dataTypeStr);
 
         // Invoke the Recording API to unsubscribe from the data type and specify a callback that
         // will check the result.
         // [START unsubscribe_from_datatype]
-        Fitness.RecordingApi.unsubscribe(mGoogleApiClient, DataType.TYPE_STEP_COUNT_DELTA)
+        Fitness.RecordingApi.unsubscribe(mGoogleApiClient, DataType.TYPE_STEP_COUNT_CUMULATIVE)
                 .setResultCallback(new ResultCallback<Status>() {
                     @Override
                     public void onResult(Status status) {
@@ -293,7 +311,7 @@ public class MainActivity extends ActionBarActivity implements
     private class InsertAndVerifyDataTask extends AsyncTask<Void, Void, Void> {
         protected Void doInBackground(Void... params) {
             //First, create a new dataset and insertion request.
-            DataSet dataSet = insertFitnessData();
+//            DataSet dataSet = insertFitnessData();
 
             // [START insert_dataset]
             // Then, invoke the History API to insert the data and await the result, which is
@@ -322,53 +340,49 @@ public class MainActivity extends ActionBarActivity implements
             // [START read_dataset]
             // Invoke the History API to fetch the data with the query and await the result of
             // the read request.
-            DataReadResult dataReadResult =
-                    Fitness.HistoryApi.readData(mGoogleApiClient, readRequest).await(1, TimeUnit.MINUTES);
+            PendingResult<DataReadResult> dataReadPendingResult =
+                    Fitness.HistoryApi.readData(mGoogleApiClient, readRequest);//.await(1, TimeUnit.MINUTES);
             // [END read_dataset]
 
             // For the sake of the sample, we'll print the data so we can see what we just added.
             // In general, logging fitness information should be avoided for privacy reasons.
-            printData(dataReadResult);
+
+
+            dataReadPendingResult.setResultCallback(new ResultCallback<DataReadResult>() {
+                @Override
+                public void onResult(DataReadResult dataReadResult) {
+
+//                    DataSource myDataSource = new DataSource.Builder()
+//                            .setDataType(DataType.TYPE_STEP_COUNT_CUMULATIVE)
+//                            .setObfuscated(true)
+//                            .setType(1)//raw
+//                            .build();
+
+                    printData(dataReadResult);
+                    DataSet stepData = dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_CUMULATIVE);
+
+                    int totalSteps = 0;
+                    String myString = stepData.getDataSource().toDebugString();
+
+                    for (DataPoint dp : stepData.getDataPoints()) {
+                        for(Field field : dp.getDataType().getFields()) {
+                            int steps = dp.getValue(field).asInt();
+
+                            totalSteps += steps;
+
+                        }
+                    }
+
+                    Log.i("total Steps damn it: ", String.valueOf(totalSteps));
+                    Log.i("info", myString);
+                    settings.setCurrentStep(totalSteps);
+
+                }
+            });
+
 
             return null;
         }
-    }
-
-    /**
-     * Create and return a {@link DataSet} of step count data for the History API.
-     */
-    private DataSet insertFitnessData() {
-        Log.i(TAG, "Creating a new data insert request");
-
-        // [START build_insert_data_request]
-        // Set a start and end time for our data, using a start time of 1 hour before this moment.
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.HOUR_OF_DAY, -1);
-        long startTime = cal.getTimeInMillis();
-
-        // Create a data source
-        DataSource dataSource = new DataSource.Builder()
-                .setAppPackageName(this)
-                .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
-                .setName(TAG + " - step count")
-                .setType(DataSource.TYPE_RAW)
-                .build();
-
-        // Create a data set
-        int stepCountDelta = 1000;
-        DataSet dataSet = DataSet.create(dataSource);
-        // For each data point, specify a start time, end time, and the data value -- in this case,
-        // the number of new steps.
-        DataPoint dataPoint = dataSet.createDataPoint()
-                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS);
-        dataPoint.getValue(Field.FIELD_STEPS).setInt(stepCountDelta);
-        dataSet.add(dataPoint);
-        // [END build_insert_data_request]
-
-        return dataSet;
     }
 
     /**
@@ -389,17 +403,25 @@ public class MainActivity extends ActionBarActivity implements
         Log.i(TAG, "Range Start: " + dateFormat.format(startTime));
         Log.i(TAG, "Range End: " + dateFormat.format(endTime));
 
-        DataReadRequest readRequest = new DataReadRequest.Builder()
-                // The data request can specify multiple data types to return, effectively
-                // combining multiple data queries into one call.
-                // In this example, it's very unlikely that the request is for several hundred
-                // datapoints each consisting of a few steps and a timestamp.  The more likely
-                // scenario is wanting to see how many steps were walked per day, for 7 days.
-                .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
-                        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
-                        // bucketByTime allows for a time span, whereas bucketBySession would allow
-                        // bucketing by "sessions", which would need to be defined in code.
-                .bucketByTime(1, TimeUnit.DAYS)
+        DataSource myDataSource = new DataSource.Builder()
+                .setDataType(DataType.TYPE_STEP_COUNT_CUMULATIVE)
+                .setObfuscated(false)
+                .setType(1)//raw
+                .build();
+
+        final DataReadRequest readRequest = new DataReadRequest.Builder()
+//                // The data request can specify multiple data types to return, effectively
+//                // combining multiple data queries into one call.
+//                // In this example, it's very unlikely that the request is for several hundred
+//                // datapoints each consisting of a few steps and a timestamp.  The more likely
+//                // scenario is wanting to see how many steps were walked per day, for 7 days.
+//                .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+//                        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
+//                        // bucketByTime allows for a time span, whereas bucketBySession would allow
+//                        // bucketing by "sessions", which would need to be defined in code.
+//                .bucketByTime(1, TimeUnit.HOURS)
+
+                .read(myDataSource)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
         // [END build_read_data_request]
@@ -443,6 +465,8 @@ public class MainActivity extends ActionBarActivity implements
         Log.i(TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
+        int totalSteps = 0;
+
         Log.i(TAG, "empty: " + dataSet.getDataPoints());
 
         for (DataPoint dp : dataSet.getDataPoints()) {
@@ -451,10 +475,11 @@ public class MainActivity extends ActionBarActivity implements
             Log.i(TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
             for(Field field : dp.getDataType().getFields()) {
+                int steps = dp.getValue(field).asInt();
+                totalSteps += steps;
                 Log.i(TAG, "\tField: " + field.getName() +
-                        " Value: " + dp.getValue(field));
-
-                settings.setCurrentStep(dp.getValue(field).asInt());
+                        " Value: " + totalSteps);
+                settings.setCurrentStep(totalSteps);
 
             }
 
