@@ -243,16 +243,34 @@ public class MainActivity extends ActionBarActivity implements
                     }
                 }
             });
+
+        Fitness.RecordingApi.subscribe(
+                mGoogleApiClient, DataType.TYPE_STEP_COUNT_DELTA)
+                .setResultCallback(new ResultCallback<Status>() {
+                    @Override
+                    public void onResult(Status status) {
+                        if (status.isSuccess()) {
+                            if (status.getStatusCode()
+                                    == FitnessStatusCodes.SUCCESS_ALREADY_SUBSCRIBED) {
+                                Log.i(TAG, "Existing subscription for activity detected.");
+                            } else {
+                                Log.i(TAG, "Successfully subscribed!");
+                            }
+                        } else {
+                            Log.i(TAG, "There was a problem subscribing.");
+                        }
+                    }
+                });
     }
 
     private void cancelSubscription() {
-        final String dataTypeStr = DataType.TYPE_STEP_COUNT_CUMULATIVE.toString();
+        final String dataTypeStr = DataType.TYPE_STEP_COUNT_DELTA.toString();
         Log.i(TAG, "Unsubscribing from data type: " + dataTypeStr);
 
         // Invoke the Recording API to unsubscribe from the data type and specify a callback that
         // will check the result.
         // [START unsubscribe_from_datatype]
-        Fitness.RecordingApi.unsubscribe(mGoogleApiClient, DataType.TYPE_STEP_COUNT_CUMULATIVE)
+        Fitness.RecordingApi.unsubscribe(mGoogleApiClient, DataType.TYPE_STEP_COUNT_DELTA)
                 .setResultCallback(new ResultCallback<Status>() {
                     @Override
                     public void onResult(Status status) {
@@ -356,20 +374,19 @@ public class MainActivity extends ActionBarActivity implements
                     DataSet stepData = dataReadResult.getDataSet(DataType.TYPE_STEP_COUNT_CUMULATIVE);
 
                     int totalSteps = 0;
-                    String myString = stepData.getDataSource().toDebugString();
+                    String myString = stepData.getDataSource().getStreamName();
 
                     for (DataPoint dp : stepData.getDataPoints()) {
                         for(Field field : dp.getDataType().getFields()) {
                             int steps = dp.getValue(field).asInt();
-
+                            Log.i("yo", String.valueOf(dp.getTimestampNanos()));
                             totalSteps += steps;
 
                         }
                     }
 
                     Log.i("total Steps damn it: ", String.valueOf(totalSteps));
-                    Log.i("info", myString);
-                    settings.setCurrentStep(totalSteps);
+                    Log.i("info:", myString);
 
                 }
             });
@@ -407,7 +424,7 @@ public class MainActivity extends ActionBarActivity implements
 //                        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
 //                        // bucketByTime allows for a time span, whereas bucketBySession would allow
 //                        // bucketing by "sessions", which would need to be defined in code.
-                .bucketByTime(1, TimeUnit.HOURS)
+                .bucketByTime(1, TimeUnit.DAYS)
                 .read(DataType.TYPE_STEP_COUNT_CUMULATIVE)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
