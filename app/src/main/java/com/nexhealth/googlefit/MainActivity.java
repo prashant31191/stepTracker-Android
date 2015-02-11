@@ -283,6 +283,22 @@ public class MainActivity extends ActionBarActivity implements
                     }
                 });
         // [END unsubscribe_from_datatype]
+
+        final String dataTypeString = DataType.TYPE_STEP_COUNT_CUMULATIVE.toString();
+        Log.i(TAG, "Unsubscribing from data type: " + dataTypeString);
+
+        Fitness.RecordingApi.unsubscribe(mGoogleApiClient, DataType.TYPE_STEP_COUNT_CUMULATIVE)
+                .setResultCallback(new ResultCallback<Status>() {
+                    @Override
+                    public void onResult(Status status) {
+                        if (status.isSuccess()) {
+                            Log.i(TAG, "Successfully unsubscribed for data type: " + dataTypeStr);
+                        } else {
+                            // Subscription not removed
+                            Log.i(TAG, "Failed to unsubscribe for data type: " + dataTypeStr);
+                        }
+                    }
+                });
     }
 
     private void dumpSubscriptionsList() {
